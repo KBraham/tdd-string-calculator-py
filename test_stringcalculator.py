@@ -17,18 +17,18 @@ def add(numbers):
 
 class TestStringMethods(unittest.TestCase):
     def test_GivenEmptyStringExpectResultNot(self):
-        self.assertEqual(add(""), 0)
+        self.assertEqual(0, add(""))
 
 
     def test_GivenNumberExpectEqualNumberReturn(self):
-        self.assertEqual(add("1"), 1)
+        self.assertEqual(1, add("1"))
 
     def test_GivenCommaSeparatedNumbersExpectSumOfNumbers(self):
-        self.assertEqual(add("1,2"), 3)
+        self.assertEqual(3, add("1,2"))
 
 
     def test_GivenMultipleSeparatedNumbersExpectSumOfAll(self):
-        self.assertEqual(add("1,2,3,4"), 10)
+        self.assertEqual(10, add("1,2,3,4"))
 
     def test_GivenMultipleNumbersWithNewLineExpectSumOfAll(self):
-        self.assertEqual(add("2\n3,4"), 9)
+        self.assertEqual(9, add("2\n3,4"))
