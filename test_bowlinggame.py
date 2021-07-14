@@ -3,20 +3,24 @@ import unittest
 
 class Frame:
 
-    def __init__(self) -> None:
+    def __init__(self, index) -> None:
         self.score = []
+        self.index = index
 
     def Roll(self, pins):
         self.score.append(pins)
 
 
-    def IsSpare():
+    def IsSpare(self):
         return len(self.score) > 1 and sum(self.score[:2]) == 10
 
-    def IsStrike():
-        return self.score[0] == 10
+    def IsStrike(self):
+        return len(self.score) == 1 and self.score[0] == 10
 
-    def getScore():
+    def IsPlayed(self):
+        return self.IsStrike() or (self.index < 10 and len(self.score) >= 2) or (self.index == 10 and len(self.score) == 3)
+
+    def getScore(self):
         return sum(self.score)
 
 
@@ -24,63 +28,46 @@ class Frame:
 class Game:
     def __init__(self) -> None:
         self.score = []
+        self.frames = []
+        self.frames.append(Frame(1))
 
     def Roll(self, pins):
-        # if pins == 10:
-        #     self.score.append(0)
-        self.score.append(pins)
+        if self.frames[-1].IsPlayed():
+            self.frames.append(Frame(len(self.frames)))
+
+        self.frames[-1].Roll(pins)
+        # self.score.append(pins)
 
     def Score(self):
         points = 0
-        print(self.score)
-        for i,x in enumerate(self.score):
-            if self.isBonus(i):
-                x *= 2
-            points += x
+        for i,x in enumerate(self.frames):
+            if i < 9:
+                if x.IsStrike():
+                    points += sum(self.NextTwoRolls(i))
+
+                elif x.IsSpare():
+                    points += self.frames[i+1].score[0]
+
+            points += x.getScore()
         return points
 
-    def isBonus(self, i):
-        if i >= 1 and self.score[i-1] == 10:
-            return True
-        elif i >= 2 and self.score[i-2] == 10:
-            return True
-        elif i >= 2 and self.isEndOfFrame(i-1) and i < 20:
-            if sum(self.score[i-2:i]) == 10:
-                return True
-        return False
+    def NextTwoRolls(self, index):
+        rolls = []
+        rolls.append(self.frames[index+1].score[0])
 
-    def isEndOfFrame(self, round):
-        number_of_tries = 0
-        for i,x in enumerate(self.score):
-            if i > round:
-                break
-            number_of_tries += 1
-            if x == 10:
-                number_of_tries += 1
+        if self.frames[index+1].IsStrike():
+            rolls.append(self.frames[index+2].score[0])
+        else:
+            rolls.append(self.frames[index+1].score[1])
 
-        return number_of_tries % 2 == 0
+        return rolls
 
 
 class TestGameMethods(unittest.TestCase):
 
-
     def setUp(self) -> None:
         self._game = Game()
         return super().setUp()
-
-
-    def test_GivenTwoRoundsWithOneStikeExpectEndOfFrame(self):
-        self._game.Roll(1)
-        self._game.Roll(1)
-        self._game.Roll(10)
-        self.assertTrue(self._game.isEndOfFrame(2))
-
-    def test_GivenTwoRoundsWithOneStikeAndOneTryExpectEndOfFrame(self):
-        self._game.Roll(1)
-        self._game.Roll(1)
-        self._game.Roll(10)
-        self._game.Roll(1)
-        self.assertFalse(self._game.isEndOfFrame(3))
 
     def test_GivenAbandonedGameExpectScore0(self):
         self.assertEqual(0, self._game.Score())
@@ -149,14 +136,29 @@ class TestGameMethods(unittest.TestCase):
         self.assertEqual(30, self._game.Score())
 
 
-    # def test_GivenTenRoundsWithTwoStrikesConsecutivelyExpectScore49(self):
-    #     self._game.Roll(1)
-    #     self._game.Roll(1)
+    def test_GivenTenRoundsWithTwoStrikesConsecutivelyExpectScore49(self):
+        self._game.Roll(1)
+        self._game.Roll(1)
 
-    #     self._game.Roll(10)
-    #     self._game.Roll(10)
+        self._game.Roll(10)
+        self._game.Roll(10)
 
-    #     for i in range(14):
-    #         self._game.Roll(1)
+        for i in range(14):
+            self._game.Roll(1)
 
-    #     self.assertEqual(49, self._game.Score())
+        self.assertEqual(49, self._game.Score())
+
+
+    def test_GivenTenRoundsWithAllStrikesExpectScore300(self):
+
+        for i in range(12):
+            self._game.Roll(10)
+
+        self.assertEqual(300, self._game.Score())
+
+    def test_GivenTenRoundsWithAllSparesExpectScore150(self):
+
+        for i in range(21):
+            self._game.Roll(5)
+
+        self.assertEqual(150, self._game.Score())
